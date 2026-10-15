@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Manajemen Nomor Surat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--sf:#fff;--ink:#14232e;--mut:#5d6c78;--ln:#d8dee4;--ac:#0f6e6e;--dg:#b3261e;--st:#fff8e6;--stl:#e2c26b}
+@media(prefers-color-scheme:dark){:root{--bg:#10171c;--sf:#18222a;--ink:#e6edf2;--mut:#93a3af;--ln:#2a3844;--ac:#4cc2bd;--dg:#ff8a80;--st:#2b2616;--stl:#7a6830}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'IBM Plex Sans',system-ui,sans-serif}
+header{padding:20px 24px 4px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
+h1{margin:0;font-size:22px;font-weight:600}header small{color:var(--mut)}
+main{padding:16px 24px 40px;max-width:1320px;margin:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:12px 14px}
+.stat b{display:block;font-size:24px;font-weight:600}.stat span{color:var(--mut);font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(300px,370px) 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}main,header{padding-left:14px;padding-right:14px}}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:16px;min-width:0}
+.card h2{margin:0 0 12px;font-size:16px;font-weight:600}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:110px;font-family:'IBM Plex Mono',monospace;font-size:13px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stamp{margin-top:14px;padding:12px;border:1.5px dashed var(--stl);background:var(--st);border-radius:6px}
+.stamp small{color:var(--mut);display:block}
+.stamp code{font:600 15px 'IBM Plex Mono',monospace;word-break:break-all;display:block}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--ln);background:var(--sf);color:var(--ink);padding:7px 12px}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:500}
+@media(prefers-color-scheme:dark){button.pri{color:#06201f}}
+button.block{width:100%;margin-top:14px;padding:10px}
+button.sm{padding:3px 8px;font-size:13px}button.dg{color:var(--dg)}
+button:disabled{opacity:.55;cursor:wait}
+.tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--ln);overflow-x:auto}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--mut);padding:8px 12px;white-space:nowrap}
+.tab.on{color:var(--ac);border-color:var(--ac);font-weight:600}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:8px}
+.filters label{margin:0 0 2px;font-size:12px}
+.fbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;color:var(--mut);font-size:13px;flex-wrap:wrap}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--ln);vertical-align:top}
+th{color:var(--mut);font-weight:500;font-size:13px;white-space:nowrap}
+td.no{font-family:'IBM Plex Mono',monospace;font-size:13px}
+td.act{white-space:nowrap;text-align:right}
+td small,.hint{color:var(--mut);display:block;font-size:12.5px}
+td a{color:var(--ac);font-size:12.5px;display:block}
+.pg{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--mut);font-size:13px}
+.empty{padding:28px;text-align:center;color:var(--mut)}
+.hide{display:none}
+details{margin-top:12px;font-size:13px;color:var(--mut)}details code{font-family:'IBM Plex Mono',monospace;color:var(--ink)}
+dialog{border:1px solid var(--ln);border-radius:8px;background:var(--sf);color:var(--ink);width:min(480px,94vw);padding:18px;max-height:90vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 4px;font-size:16px}
+.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.list{font:500 13px 'IBM Plex Mono',monospace;background:var(--bg);padding:10px;border-radius:6px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:8px}
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+#login form{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:22px;width:min(360px,100%)}
+#login h2{margin:0 0 4px;font-size:18px}
+#loginErr{color:var(--dg);font-size:13px;min-height:20px;margin-top:8px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:99}
+#toast.on{opacity:1}#toast.err{background:var(--dg);color:#fff}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header><h1>Manajemen Nomor Surat</h1><span><small id="meta">Memuat…</small> <button class="sm" id="btnLogout" style="margin-left:8px">Keluar</button></span></header>
+<main>
+<section class="stats" id="stats"></section>
+<div class="grid">
+
+<form class="card" id="form" autocomplete="off">
+  <h2>Buat nomor surat</h2>
+  <label for="seri">Seri</label><select id="seri"></select>
+  <input id="seriBaru" class="hide" placeholder="Seri baru, mis. 151" style="margin-top:6px">
+  <div class="row3">
+    <div><label for="tgl">Tanggal</label><input type="date" id="tgl" required></div>
+    <div><label for="thn">Tahun</label><input id="thn" inputmode="numeric" maxlength="4"></div>
+    <div><label for="jml">Jumlah</label><input id="jml" type="number" min="1" max="50" value="1"></div>
+  </div>
+  <label for="jdl">Judul</label><input id="jdl">
+  <label for="sub">Sub judul</label><input id="sub">
+  <span class="hint" id="tplHint"></span>
+  <div class="stamp"><small id="prevLbl">Nomor yang akan dibuat</small><code id="prev">Pilih seri dulu</code></div>
+  <button class="pri block" id="btnAdd" type="submit">Buat nomor surat</button>
+</form>
+
+<div class="card">
+  <div class="tabs">
+    <button class="tab on" data-t="list">Daftar surat</button>
+    <button class="tab" data-t="seri">Per seri</button>
+    <button class="tab" data-t="tpl">Template dokumen</button>
+    <button class="tab" data-t="set">Pengaturan</button>
+  </div>
+
+  <div id="t-list">
+    <div class="filters">
+      <div style="grid-column:span 2"><label for="q">Cari</label><input id="q" placeholder="Nomor, judul, sub judul"></div>
+      <div><label for="fSeri">Seri</label><select id="fSeri"></select></div>
+      <div><label for="fThn">Tahun</label><select id="fThn"></select></div>
+      <div><label for="fDari">Dari tanggal</label><input type="date" id="fDari"></div>
+      <div><label for="fSampai">Sampai tanggal</label><input type="date" id="fSampai"></div>
+      <div><label for="fJudul">Judul</label><select id="fJudul"><option value="">Semua</option><option value="kosong">Belum diisi</option><option value="isi">Sudah diisi</option></select></div>
+      <div><label for="fDok">Dokumen</label><select id="fDok"><option value="">Semua</option><option value="belum">Belum dibuat</option><option value="sudah">Sudah dibuat</option></select></div>
+      <div><label for="fUrut">Urutkan</label><select id="fUrut"><option value="baru">Terbaru</option><option value="lama">Terlama</option><option value="nomor">Nomor surat</option></select></div>
+    </div>
+    <div class="fbar"><span id="fInfo"></span><span><button class="sm" id="btnReset">Reset filter</button> <button class="sm" id="btnCsv">Ekspor CSV</button></span></div>
+    <div class="wrap"><table><thead><tr><th>Tanggal</th><th>Nomor surat</th><th>Judul</th><th>Dokumen</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="pg"><span id="pgInfo"></span><span><button class="sm" id="prevP">Sebelumnya</button> <button class="sm" id="nextP">Berikutnya</button></span></div>
+  </div>
+
+  <div id="t-seri" class="hide">
+    <div class="fbar"><span>Judul default dipakai otomatis saat membuat nomor di seri tersebut.</span><button class="sm" id="btnSeriNew">Tambah template seri</button></div>
+    <div class="wrap"><table><thead><tr><th>Seri</th><th>Tahun</th><th>Total</th><th>Nomor terakhir</th><th>Judul default</th><th></th></tr></thead><tbody id="tbSeri"></tbody></table></div>
+  </div>
+
+  <div id="t-tpl" class="hide">
+    <p class="hint" style="margin-top:0">Taruh file Word (.docx) berpenanda <code>{{…}}</code> di satu folder Drive. Semua file di folder itu otomatis menjadi template, tanpa perlu didaftarkan. Hasilnya juga disimpan sebagai .docx.</p>
+    <div class="row2">
+      <div><label for="fTplDir">Folder template (link atau ID)</label><input id="fTplDir" placeholder="https://drive.google.com/drive/folders/…"></div>
+      <div><label for="fOutDir">Folder hasil (opsional)</label><input id="fOutDir" placeholder="Kosong = subfolder “Hasil”"></div>
+    </div>
+    <div class="fbar" style="margin-top:10px">
+      <span><button class="pri sm" id="btnFolderSave">Simpan folder</button> <button class="sm" id="btnFolderNew">Buat folder template baru</button> <button class="sm" id="btnTplRefresh">Segarkan daftar</button></span>
+      <a id="lnkTplDir" class="hide" target="_blank" rel="noopener" style="color:var(--ac)">Buka folder template</a>
+    </div>
+    <div class="wrap"><table><thead><tr><th>Template</th><th>Untuk seri</th><th></th></tr></thead><tbody id="tbTpl"></tbody></table></div>
+    <details><summary>Cara membuat template dan daftar penanda</summary>
+      <p><b>Penamaan file:</b> <code>Nota Dinas.docx</code> muncul untuk semua seri. <code>[150] Nota Dinas.docx</code> hanya untuk seri 150, dan <code>[150,151] KAK.docx</code> untuk beberapa seri.</p>
+      <p><b>Otomatis dari surat:</b> <code>{{nomor}}</code> <code>{{seri}}</code> <code>{{tahun}}</code> <code>{{kode_awal}}</code> <code>{{kode_instansi}}</code> <code>{{judul}}</code> <code>{{sub_judul}}</code></p>
+      <p><b>Dari tanggal surat:</b> <code>{{tanggal}}</code> (17 November 2025) <code>{{tanggal_pendek}}</code> <code>{{hari}}</code> <code>{{tgl}}</code> <code>{{tgl_terbilang}}</code> <code>{{bulan}}</code> <code>{{bulan_romawi}}</code> <code>{{tahun_terbilang}}</code></p>
+      <p><b>Data tetap</b> (tab Pengaturan): mis. <code>{{nama_ppk}}</code> <code>{{nip_ppk}}</code></p>
+      <p><b>Isian manual:</b> penanda lain, mis. <code>{{nama_paket}}</code>, menjadi kolom isian saat dokumen dibuat. Akhiran khusus: <code>_rp</code> (4.500.000,00), <code>_terbilang</code> (Empat Juta … Rupiah), <code>_upper</code> (HURUF KAPITAL). Contoh: <code>{{pagu_rp}}</code>, <code>{{pagu_terbilang}}</code>, <code>{{nama_pekerjaan_upper}}</code>.</p>
+      <p>Ketik penanda sekaligus tanpa jeda format di tengahnya. Penanda yang tidak dikenali dibiarkan apa adanya.</p>
+    </details>
+  </div>
+
+  <div id="t-set" class="hide">
+    <div class="row2">
+      <div><label for="sKode">Kode awal</label><input id="sKode"></div>
+      <div><label for="sInst">Kode instansi</label><input id="sInst"></div>
+      <div><label for="sThn">Tahun default</label><input id="sThn" maxlength="4"></div>
+      <div><label for="sSheet">Nama sheet (kosong = sheet pertama)</label><input id="sSheet"></div>
+    </div>
+    <label for="sVars">Data tetap untuk template dokumen (satu per baris: nama = nilai)</label>
+    <textarea id="sVars" spellcheck="false"></textarea>
+    <div class="btns" style="justify-content:flex-start">
+      <button class="pri" id="btnSave">Simpan pengaturan</button>
+      <button id="btnClean">Bersihkan baris kosong</button>
+    </div>
+  </div>
+</div>
+</div>
+</main>
+
+<!-- Dialog: ubah surat -->
+<dialog id="dlg">
+  <h3>Ubah data surat</h3><code id="eNo" style="font:600 13px 'IBM Plex Mono',monospace;word-break:break-all"></code>
+  <label for="eTgl">Tanggal</label><input type="date" id="eTgl">
+  <label for="eJdl">Judul</label><input id="eJdl">
+  <label for="eSub">Sub judul</label><input id="eSub">
+  <div class="btns"><button id="eCancel">Batal</button><button class="pri" id="eSave">Simpan</button></div>
+</dialog>
+
+<!-- Dialog: hasil pembuatan -->
+<dialog id="dlgRes">
+  <h3 id="resTitle"></h3><div class="list" id="resList"></div>
+  <div class="btns"><button id="resCopy">Salin semua</button><button class="pri" id="resClose">Tutup</button></div>
+</dialog>
+
+<!-- Dialog: template judul seri -->
+<dialog id="dlgSeri">
+  <h3>Template judul per seri</h3>
+  <label for="tsSeri">Seri</label><input id="tsSeri" placeholder="mis. 150">
+  <label for="tsJdl">Judul default</label><input id="tsJdl">
+  <label for="tsSub">Sub judul default</label><input id="tsSub">
+  <span class="hint">Kosongkan keduanya untuk menghapus template.</span>
+  <div class="btns"><button id="tsCancel">Batal</button><button class="pri" id="tsSave">Simpan</button></div>
+</dialog>
+
+<!-- Dialog: generate dokumen -->
+<dialog id="dlgGen">
+  <h3>Buat dokumen</h3><code id="gNo" style="font:600 13px 'IBM Plex Mono',monospace;word-break:break-all"></code>
+  <label for="gTpl">Template</label><select id="gTpl"></select>
+  <div id="gFields"></div>
+  <div id="gOut" class="hint"></div>
+  <div class="btns"><button id="gCancel">Tutup</button><button class="pri" id="gGo">Buat dokumen</button></div>
+</dialog>
+<div id="login" class="hide">
+  <form id="loginForm">
+    <h2>Masuk</h2><span class="hint">Manajemen Nomor Surat</span>
+    <label for="pw">Kata sandi</label><input id="pw" type="password" autocomplete="current-password" required>
+    <div id="loginErr" role="alert"></div>
+    <button class="pri block" id="btnLogin" type="submit" style="margin-top:6px">Masuk</button>
+  </form>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+var S = {rows: [], settings: {}, seriTpl: {}, docTpl: [], page: 1, per: 15, edit: null, gen: null, dirty: {jdl: false, sub: false}};
+var $ = function (id) { return document.getElementById(id); };
+var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+var today = function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+var numSort = function (a, b) { return a.localeCompare(b, undefined, {numeric: true}); };
+
+var TOKEN = '';
+try { TOKEN = sessionStorage.getItem('tok') || ''; } catch (e) {}
+function api(action, args) {
+  var cfg = window.APP_CONFIG || {};
+  if (!cfg.API_URL || cfg.API_URL.indexOf('GANTI') >= 0) return Promise.reject(new Error('Alamat API belum diisi di config.js'));
+  return fetch(cfg.API_URL, {method: 'POST', body: JSON.stringify({action: action, args: args || [], token: TOKEN})})
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (j.auth === false) { showLogin(); throw new Error(j.error); }
+      if (!j.ok) throw new Error(j.error || 'Terjadi kesalahan');
+      return j.data;
+    }, function () { throw new Error('Tidak bisa terhubung ke server. Cek koneksi dan alamat API.'); });
+}
+function run(fn, args, ok, btn) {
+  if (btn) btn.disabled = true;
+  api(fn, args).then(function (v) { if (btn) btn.disabled = false; ok && ok(v); })
+    .catch(function (e) { if (btn) btn.disabled = false; toast(String(e.message || e).replace(/^Error:\\s*/, ''), true); });
+}
+function showLogin(msg) { $('login').classList.remove('hide'); $('loginErr').textContent = msg || ''; $('pw').focus(); }
+$('loginForm').onsubmit = function (e) {
+  e.preventDefault(); $('btnLogin').disabled = true; $('loginErr').textContent = '';
+  api('login', [$('pw').value]).then(function (d) {
+    TOKEN = d.token; try { sessionStorage.setItem('tok', TOKEN); } catch (x) {}
+    $('pw').value = ''; $('login').classList.add('hide'); $('btnLogin').disabled = false; load();
+  }).catch(function (err) { $('btnLogin').disabled = false; $('loginErr').textContent = err.message; });
+};
+$('btnLogout').onclick = function () {
+  api('logout').catch(function () {}).then(function () { TOKEN = ''; try { sessionStorage.removeItem('tok'); } catch (x) {} showLogin(); });
+};
+function toast(m, err) {
+  var t = $('toast'); t.textContent = m; t.className = 'on' + (err ? ' err' : '');
+  clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, 3800);
+}
+function copy(text, msg) {
+  var a = document.createElement('textarea'); a.value = text; document.body.appendChild(a); a.select();
+  try { document.execCommand('copy'); toast(msg || 'Tersalin'); } catch (e) { toast('Gagal menyalin', true); }
+  a.remove();
+}
+function urut(r) {
+  var p = (r.nomor.split('/')[1] || '');
+  if (p.indexOf(r.seri + '.') === 0) { var n = parseInt(p.slice(r.seri.length + 1), 10); return isNaN(n) ? 0 : n; }
+  return 0;
+}
+function docsOf(r) {
+  return r.docs ? r.docs.split('\n').filter(Boolean).map(function (l) { var i = l.indexOf('::'); return {n: l.slice(0, i), u: l.slice(i + 2)}; }) : [];
+}
+function opts(list, first) { return (first !== undefined ? '<option value="">' + first + '</option>' : '') + list.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join(''); }
+
+function applyData(d) {
+  S.rows = d.rows; S.settings = d.settings; S.seriTpl = d.seriTpl || {}; S.docTpl = d.docTpl || [];
+  $('meta').textContent = 'Sheet: ' + d.sheetName;
+  render();
+}
+function load(cb) { run('getData', [], function (d) { applyData(d); cb && cb(); }); }
+
+function render() {
+  var series = {}, bulan = 0, ym = today().slice(0, 7);
+  S.rows.forEach(function (r) {
+    var k = r.seri + '|' + r.tahun, o = series[k] = series[k] || {seri: r.seri, tahun: r.tahun, n: 0, max: -1, last: ''};
+    o.n++; var u = urut(r); if (u >= o.max) { o.max = u; o.last = r.nomor; }
+    if (r.tanggal.slice(0, 7) === ym) bulan++;
+  });
+  S.series = Object.keys(series).map(function (k) { return series[k]; })
+    .sort(function (a, b) { return b.tahun - a.tahun || numSort(a.seri, b.seri); });
+  var terakhir = S.rows.length ? S.rows.slice().sort(function (a, b) { return b.row - a.row; })[0].nomor : '-';
+  var tanpaDok = S.rows.filter(function (r) { return !r.docs; }).length;
+  $('stats').innerHTML =
+    '<div class="stat"><b>' + S.rows.length + '</b><span>Total surat</span></div>' +
+    '<div class="stat"><b>' + S.series.length + '</b><span>Seri aktif</span></div>' +
+    '<div class="stat"><b>' + bulan + '</b><span>Surat bulan ini</span></div>' +
+    '<div class="stat"><b>' + tanpaDok + '</b><span>Belum ada dokumen</span></div>' +
+    '<div class="stat"><b style="font:600 13px \'IBM Plex Mono\',monospace;word-break:break-all">' + esc(terakhir) + '</b><span>Surat terakhir dibuat</span></div>';
+
+  var uniq = []; S.rows.forEach(function (r) { if (uniq.indexOf(r.seri) < 0) uniq.push(r.seri); });
+  Object.keys(S.seriTpl).forEach(function (s) { if (uniq.indexOf(s) < 0) uniq.push(s); });
+  uniq.sort(numSort);
+  var cur = $('seri').value;
+  $('seri').innerHTML = '<option value="">Pilih seri…</option>' + opts(uniq) + '<option value="__new">➕ Seri baru…</option>';
+  if (uniq.indexOf(cur) >= 0 || cur === '__new') $('seri').value = cur;
+  var fs = $('fSeri').value, ft = $('fThn').value;
+  $('fSeri').innerHTML = opts(uniq, 'Semua');
+  var yrs = []; S.rows.forEach(function (r) { if (yrs.indexOf(r.tahun) < 0) yrs.push(r.tahun); }); yrs.sort().reverse();
+  $('fThn').innerHTML = opts(yrs, 'Semua');
+  $('fSeri').value = fs; $('fThn').value = ft;
+
+  $('tbSeri').innerHTML = S.series.length ? S.series.map(function (o) {
+    var t = S.seriTpl[o.seri];
+    return '<tr><td>' + esc(o.seri) + '</td><td>' + esc(o.tahun) + '</td><td>' + o.n + '</td><td class="no">' + esc(o.last) + '</td>' +
+      '<td>' + (t ? esc(t.judul) + (t.subJudul ? '<small>' + esc(t.subJudul) + '</small>' : '') : '<small>(belum ada)</small>') + '</td>' +
+      '<td class="act"><button class="sm" data-ts="' + esc(o.seri) + '">Template judul</button> <button class="sm dg" data-ds="' + esc(o.seri) + '" data-dt="' + esc(o.tahun) + '">Hapus</button></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="empty">Belum ada seri.</td></tr>';
+
+  $('tbTpl').innerHTML = S.docTpl.length ? S.docTpl.map(function (t) {
+    return '<tr><td>' + esc(t.nama) + '</td><td>' + (esc(t.seri) || '<small>Semua seri</small>') + '</td>' +
+      '<td class="act"><button class="sm" data-tc="' + t.id + '">Cek penanda</button> <a href="https://drive.google.com/file/d/' + esc(t.id) + '/view" target="_blank" rel="noopener">Buka</a></td></tr>';
+  }).join('') : '<tr><td colspan="3" class="empty">' + (S.settings.templateFolder ? 'Belum ada file .docx di folder template.' : 'Belum ada folder template. Isi link folder di atas, atau klik “Buat folder template baru”.') + '</td></tr>';
+  $('fTplDir').value = S.settings.templateFolder || ''; $('fOutDir').value = S.settings.outputFolder || '';
+  $('lnkTplDir').classList.toggle('hide', !S.settings.templateFolder);
+  if (S.settings.templateFolder) $('lnkTplDir').href = 'https://drive.google.com/drive/folders/' + S.settings.templateFolder;
+
+  $('thn').value = $('thn').value || S.settings.tahun;
+  $('sKode').value = S.settings.kodeAwal; $('sInst').value = S.settings.kodeInstansi;
+  $('sThn').value = S.settings.tahun; $('sSheet').value = S.settings.sheetName || '';
+  $('sVars').value = Object.keys(S.settings.vars || {}).map(function (k) { return k + ' = ' + S.settings.vars[k]; }).join('\n');
+  renderList(); preview();
+}
+
+function filtered() {
+  var q = $('q').value.toLowerCase(), fs = $('fSeri').value, ft = $('fThn').value, dari = $('fDari').value, smp = $('fSampai').value,
+      fj = $('fJudul').value, fd = $('fDok').value, u = $('fUrut').value;
+  var out = S.rows.filter(function (r) {
+    return (!fs || r.seri === fs) && (!ft || r.tahun === ft) && (!dari || r.tanggal >= dari) && (!smp || r.tanggal <= smp) &&
+      (!fj || (fj === 'kosong' ? !r.judul : !!r.judul)) && (!fd || (fd === 'belum' ? !r.docs : !!r.docs)) &&
+      (!q || (r.nomor + ' ' + r.judul + ' ' + r.subJudul).toLowerCase().indexOf(q) >= 0);
+  });
+  return out.sort(function (a, b) {
+    if (u === 'nomor') return numSort(a.nomor, b.nomor);
+    return u === 'lama' ? a.row - b.row : b.row - a.row;
+  });
+}
+
+function renderList() {
+  var all = filtered(), pages = Math.max(1, Math.ceil(all.length / S.per));
+  S.page = Math.min(S.page, pages);
+  var part = all.slice((S.page - 1) * S.per, S.page * S.per);
+  $('tb').innerHTML = part.length ? part.map(function (r) {
+    var docs = docsOf(r).map(function (d) { return '<a href="' + esc(d.u) + '" target="_blank" rel="noopener">' + esc(d.n) + '</a>'; }).join('');
+    return '<tr><td>' + esc(r.tanggal) + '</td><td class="no">' + esc(r.nomor) + '</td>' +
+      '<td>' + (esc(r.judul) || '<small>(belum ada judul)</small>') + (r.subJudul ? '<small>' + esc(r.subJudul) + '</small>' : '') + '</td>' +
+      '<td>' + (docs || '<small>-</small>') + '</td><td class="act">' +
+      '<button class="sm" data-gn="' + r.row + '">Dokumen</button> <button class="sm" data-cp="' + r.row + '">Salin</button> <button class="sm" data-ed="' + r.row + '">Ubah</button> <button class="sm dg" data-dl="' + r.row + '">Hapus</button></td></tr>';
+  }).join('') : '<tr><td colspan="5" class="empty">' + (S.rows.length ? 'Tidak ada surat yang cocok. Coba reset filter.' : 'Belum ada surat. Buat nomor pertama di formulir sebelah kiri.') + '</td></tr>';
+  var aktif = ['q', 'fSeri', 'fThn', 'fDari', 'fSampai', 'fJudul', 'fDok'].filter(function (id) { return $(id).value; }).length;
+  $('fInfo').textContent = all.length + ' dari ' + S.rows.length + ' surat' + (aktif ? ' · ' + aktif + ' filter aktif' : '');
+  $('pgInfo').textContent = 'Halaman ' + S.page + ' dari ' + pages;
+  $('prevP').disabled = S.page <= 1; $('nextP').disabled = S.page >= pages;
+}
+
+function getSeri() { return $('seri').value === '__new' ? $('seriBaru').value.trim() : $('seri').value; }
+
+function fillTpl() {
+  var t = S.seriTpl[getSeri()];
+  $('jdl').placeholder = t && t.judul ? t.judul : ''; $('sub').placeholder = t && t.subJudul ? t.subJudul : '';
+  if (!S.dirty.jdl) $('jdl').value = t ? t.judul || '' : '';
+  if (!S.dirty.sub) $('sub').value = t ? t.subJudul || '' : '';
+  $('tplHint').textContent = t ? 'Judul terisi dari template seri ' + getSeri() + '. Boleh diubah.' : '';
+}
+
+var pt;
+function preview() {
+  var s = getSeri(), p = $('prev'), n = Math.max(1, Math.min(50, parseInt($('jml').value, 10) || 1));
+  if (!s) { p.textContent = 'Pilih seri dulu'; return; }
+  clearTimeout(pt);
+  pt = setTimeout(function () {
+    api('previewNomor', [s, $('thn').value, n]).then(function (a) {
+      $('prevLbl').textContent = a.length > 1 ? a.length + ' nomor akan dibuat' : 'Nomor yang akan dibuat';
+      p.textContent = a.length > 1 ? a[0] + '\ns/d\n' + a[a.length - 1] : a[0];
+      p.style.whiteSpace = 'pre-line';
+    }).catch(function () {});
+  }, 250);
+}
+function rowBy(n) { return S.rows.filter(function (r) { return r.row === +n; })[0]; }
+function showRes(title, text) { $('resTitle').textContent = title; $('resList').textContent = text; $('dlgRes').showModal(); }
+
+// ----- events: form
+$('seri').onchange = function () { $('seriBaru').classList.toggle('hide', this.value !== '__new'); fillTpl(); preview(); };
+$('seriBaru').oninput = function () { fillTpl(); preview(); };
+$('thn').oninput = preview; $('jml').oninput = preview;
+$('jdl').oninput = function () { S.dirty.jdl = true; }; $('sub').oninput = function () { S.dirty.sub = true; };
+
+$('form').onsubmit = function (e) {
+  e.preventDefault();
+  var s = getSeri(); if (!s) return toast('Pilih atau isi seri dulu', true);
+  var n = parseInt($('jml').value, 10) || 1;
+  run('addSurat', [{seri: s, tanggal: $('tgl').value, tahun: $('thn').value, jumlah: n, judul: $('jdl').value, subJudul: $('sub').value}], function (r) {
+    var txt = r.nomor.join('\n');
+    if (r.nomor.length === 1) { copy(txt, 'Nomor dibuat dan disalin: ' + txt); }
+    else showRes(r.nomor.length + ' nomor berhasil dibuat', txt);
+    S.dirty = {jdl: false, sub: false}; $('seriBaru').value = ''; $('jml').value = 1;
+    load(function () { $('seri').value = s; $('seriBaru').classList.add('hide'); fillTpl(); preview(); });
+  }, $('btnAdd'));
+};
+$('resCopy').onclick = function () { copy($('resList').textContent, 'Semua nomor disalin'); };
+$('resClose').onclick = function () { $('dlgRes').close(); };
+
+// ----- events: filter
+['q', 'fSeri', 'fThn', 'fDari', 'fSampai', 'fJudul', 'fDok', 'fUrut'].forEach(function (id) { $(id).oninput = function () { S.page = 1; renderList(); }; });
+$('btnReset').onclick = function () {
+  ['q', 'fSeri', 'fThn', 'fDari', 'fSampai', 'fJudul', 'fDok'].forEach(function (id) { $(id).value = ''; });
+  $('fUrut').value = 'baru'; S.page = 1; renderList();
+};
+$('prevP').onclick = function () { S.page--; renderList(); };
+$('nextP').onclick = function () { S.page++; renderList(); };
+$('btnCsv').onclick = function () {
+  var q = function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
+  var lines = [['Tanggal', 'Judul', 'Sub Judul', 'Nomor Surat', 'Kode Awal', 'Seri', 'Kode Instansi', 'Tahun', 'Dokumen'].map(q).join(',')];
+  filtered().forEach(function (r) { lines.push([r.tanggal, r.judul, r.subJudul, r.nomor, r.kodeAwal, r.seri, r.kodeInstansi, r.tahun, docsOf(r).map(function (d) { return d.u; }).join(' ')].map(q).join(',')); });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv'}));
+  a.download = 'nomor-surat.csv'; a.click();
+};
+
+// ----- events: klik umum
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var d = b.dataset;
+  if (d.t) {
+    document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t === b); });
+    ['list', 'seri', 'tpl', 'set'].forEach(function (t) { $('t-' + t).classList.toggle('hide', t !== d.t); });
+  }
+  if (d.cp) copy(rowBy(d.cp).nomor, 'Nomor disalin');
+  if (d.ed) {
+    var r = rowBy(d.ed); S.edit = r;
+    $('eNo').textContent = r.nomor; $('eTgl').value = r.tanggal; $('eJdl').value = r.judul; $('eSub').value = r.subJudul; $('dlg').showModal();
+  }
+  if (d.dl) {
+    var x = rowBy(d.dl);
+    if (confirm('Hapus surat ' + x.nomor + '?\n\nBaris di spreadsheet akan dihapus permanen.'))
+      run('deleteSurat', [x.row, x.nomor], function () { toast('Surat dihapus'); load(); }, b);
+  }
+  if (d.ds && confirm('Hapus SEMUA surat seri ' + d.ds + ' tahun ' + d.dt + '?\n\nTindakan ini tidak bisa dibatalkan.'))
+    run('deleteSeri', [d.ds, d.dt], function (n) { toast(n + ' surat dihapus'); load(); }, b);
+  if (d.ts) openSeriTpl(d.ts);
+  if (d.gn) openGen(rowBy(d.gn));
+  if (d.tc) run('scanTemplate', [d.tc], function (r) {
+    showRes('Penanda di template', 'Terisi otomatis:\n' + (r.auto.length ? r.auto.map(function (t) { return '{{' + t + '}}'; }).join('  ') : '(tidak ada)') +
+      '\n\nDiisi manual saat membuat dokumen:\n' + (r.fields.length ? r.fields.join(', ') : '(tidak ada)'));
+  }, b);
+});
+
+// ----- ubah surat
+$('eCancel').onclick = function () { $('dlg').close(); };
+$('eSave').onclick = function () {
+  run('updateSurat', [{row: S.edit.row, nomor: S.edit.nomor, tanggal: $('eTgl').value, judul: $('eJdl').value, subJudul: $('eSub').value}],
+    function () { $('dlg').close(); toast('Perubahan disimpan'); load(); }, $('eSave'));
+};
+
+// ----- template judul seri
+function openSeriTpl(seri) {
+  var t = S.seriTpl[seri] || {};
+  $('tsSeri').value = seri || ''; $('tsSeri').readOnly = !!seri;
+  $('tsJdl').value = t.judul || ''; $('tsSub').value = t.subJudul || ''; $('dlgSeri').showModal();
+}
+$('btnSeriNew').onclick = function () { openSeriTpl(''); };
+$('tsCancel').onclick = function () { $('dlgSeri').close(); };
+$('tsSave').onclick = function () {
+  run('saveSeriTemplate', [$('tsSeri').value, $('tsJdl').value, $('tsSub').value], function (d) {
+    $('dlgSeri').close(); S.dirty = {jdl: false, sub: false}; applyData(d); fillTpl(); toast('Template judul disimpan');
+  }, $('tsSave'));
+};
+
+// ----- folder template
+$('btnFolderSave').onclick = function () {
+  run('saveFolders', [$('fTplDir').value, $('fOutDir').value], function (d) { applyData(d); toast('Folder disimpan'); }, $('btnFolderSave'));
+};
+$('btnFolderNew').onclick = function () {
+  run('createTemplateFolder', [], function (d) { applyData(d); toast('Folder “Template Surat” dibuat. Isi dengan file .docx Anda.'); }, $('btnFolderNew'));
+};
+$('btnTplRefresh').onclick = function () { run('getData', [], function (d) { applyData(d); toast('Daftar template diperbarui'); }, $('btnTplRefresh')); };
+
+// ----- generate dokumen
+function openGen(r) {
+  S.gen = r;
+  var cocok = S.docTpl.filter(function (t) { return !t.seri || t.seri.split(',').indexOf(r.seri) >= 0; });
+  if (!cocok.length) { toast('Belum ada template untuk seri ' + r.seri + '. Isi folder template di tab Template dokumen.', true); return; }
+  $('gNo').textContent = r.nomor; $('gOut').innerHTML = ''; $('gFields').innerHTML = '';
+  $('gTpl').innerHTML = cocok.map(function (t) { return '<option value="' + t.id + '">' + esc(t.nama) + '</option>'; }).join('');
+  $('dlgGen').showModal(); loadFields();
+}
+function loadFields() {
+  $('gFields').innerHTML = '<span class="hint">Membaca template…</span>'; $('gGo').disabled = true;
+  api('getTemplateFields', [$('gTpl').value]).then(function (f) {
+    $('gGo').disabled = false;
+    $('gFields').innerHTML = f.length ? f.map(function (x) {
+      return '<label for="gf_' + x.key + '">' + esc(x.key.replace(/_/g, ' ')) + (x.numeric ? ' (angka)' : '') + '</label>' +
+        '<input id="gf_' + x.key + '" data-k="' + x.key + '" value="' + esc(x.value) + '"' + (x.numeric ? ' inputmode="numeric"' : '') + '>';
+    }).join('') : '<span class="hint">Template ini tidak butuh isian tambahan.</span>';
+  }).catch(function (e) { $('gGo').disabled = false; $('gFields').innerHTML = '<span class="hint">' + esc(e.message) + '</span>'; });
+}
+$('gTpl').onchange = loadFields;
+$('gCancel').onclick = function () { $('dlgGen').close(); };
+$('gGo').onclick = function () {
+  var vals = {}; document.querySelectorAll('#gFields input').forEach(function (i) { vals[i.dataset.k] = i.value; });
+  run('generateDoc', [{row: S.gen.row, nomor: S.gen.nomor, tplId: $('gTpl').value, values: vals}], function (r) {
+    $('gOut').innerHTML = 'Dokumen dibuat: <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Buka file Word</a>' +
+      '';
+    toast('Dokumen berhasil dibuat'); load();
+  }, $('gGo'));
+};
+
+// ----- pengaturan
+$('btnSave').onclick = function () {
+  var vars = $('sVars').value.split('\n').map(function (l) { var i = l.indexOf('='); return i < 0 ? null : {k: l.slice(0, i), v: l.slice(i + 1).trim()}; }).filter(Boolean);
+  run('saveSettings', [{kodeAwal: $('sKode').value, kodeInstansi: $('sInst').value, tahun: $('sThn').value, sheetName: $('sSheet').value, vars: vars}],
+    function (d) { applyData(d); $('thn').value = d.settings.tahun; toast('Pengaturan disimpan'); }, $('btnSave'));
+};
+$('btnClean').onclick = function () { run('cleanEmptyRows', [], function (n) { toast(n + ' baris kosong dihapus'); load(); }, $('btnClean')); };
+
+$('tgl').value = today();
+if (TOKEN) load(); else showLogin();
+</script>
+</body>
+</html>
