@@ -61,17 +61,13 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog h3{margin:0 0 4px;font-size:16px}
 .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .list{font:500 13px 'IBM Plex Mono',monospace;background:var(--bg);padding:10px;border-radius:6px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:8px}
-#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
-#login form{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:22px;width:min(360px,100%)}
-#login h2{margin:0 0 4px;font-size:18px}
-#loginErr{color:var(--dg);font-size:13px;min-height:20px;margin-top:8px}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:99}
 #toast.on{opacity:1}#toast.err{background:var(--dg);color:#fff}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
 </head>
 <body>
-<header><h1>Manajemen Nomor Surat</h1><span><small id="meta">Memuat…</small> <button class="sm hide" id="btnLogout" style="margin-left:8px">Keluar</button></span></header>
+<header><h1>Manajemen Nomor Surat</h1><small id="meta">Memuat…</small></header>
 <main>
 <section class="stats" id="stats"></section>
 <div class="grid">
@@ -193,14 +189,6 @@ dialog h3{margin:0 0 4px;font-size:16px}
   <div id="gOut" class="hint"></div>
   <div class="btns"><button id="gCancel">Tutup</button><button class="pri" id="gGo">Buat dokumen</button></div>
 </dialog>
-<div id="login" class="hide">
-  <form id="loginForm">
-    <h2>Masuk</h2><span class="hint">Server meminta kata sandi. Jika Anda tidak mengaktifkannya, deploy ulang Code.gs terbaru (Manage deployments → Edit → New version).</span>
-    <label for="pw">Kata sandi</label><input id="pw" type="password" autocomplete="current-password" required>
-    <div id="loginErr" role="alert"></div>
-    <button class="pri block" id="btnLogin" type="submit" style="margin-top:6px">Masuk</button>
-  </form>
-</div>
 <div id="toast" role="status"></div>
 
 <script>
@@ -210,35 +198,21 @@ var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, f
 var today = function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 var numSort = function (a, b) { return a.localeCompare(b, undefined, {numeric: true}); };
 
-var TOKEN = '';
-try { TOKEN = sessionStorage.getItem('tok') || ''; } catch (e) {}
 function api(action, args) {
   var cfg = window.APP_CONFIG || {};
   if (!cfg.API_URL || cfg.API_URL.indexOf('GANTI') >= 0) return Promise.reject(new Error('Alamat API belum diisi di config.js'));
-  return fetch(cfg.API_URL, {method: 'POST', body: JSON.stringify({action: action, args: args || [], token: TOKEN})})
+  return fetch(cfg.API_URL, {method: 'POST', body: JSON.stringify({action: action, args: args || []})})
     .then(function (r) { return r.json(); })
     .then(function (j) {
-      if (j.auth === false) { showLogin(); throw new Error(j.error); }
       if (!j.ok) throw new Error(j.error || 'Terjadi kesalahan');
       return j.data;
-    }, function () { throw new Error('Tidak bisa terhubung ke server. Cek koneksi dan alamat API.'); });
+    }, function () { throw new Error('Tidak bisa terhubung ke server. Cek koneksi dan alamat API di config.js.'); });
 }
 function run(fn, args, ok, btn) {
   if (btn) btn.disabled = true;
   api(fn, args).then(function (v) { if (btn) btn.disabled = false; ok && ok(v); })
     .catch(function (e) { if (btn) btn.disabled = false; toast(String(e.message || e).replace(/^Error:\\s*/, ''), true); });
 }
-function showLogin(msg) { $('login').classList.remove('hide'); $('loginErr').textContent = msg || ''; $('pw').focus(); }
-$('loginForm').onsubmit = function (e) {
-  e.preventDefault(); $('btnLogin').disabled = true; $('loginErr').textContent = '';
-  api('login', [$('pw').value]).then(function (d) {
-    TOKEN = d.token; try { sessionStorage.setItem('tok', TOKEN); } catch (x) {}
-    $('pw').value = ''; $('login').classList.add('hide'); $('btnLogin').disabled = false; $('btnLogout').classList.remove('hide'); load();
-  }).catch(function (err) { $('btnLogin').disabled = false; $('loginErr').textContent = err.message; });
-};
-$('btnLogout').onclick = function () {
-  api('logout').catch(function () {}).then(function () { TOKEN = ''; try { sessionStorage.removeItem('tok'); } catch (x) {} $('btnLogout').classList.add('hide'); showLogin(); });
-};
 function toast(m, err) {
   var t = $('toast'); t.textContent = m; t.className = 'on' + (err ? ' err' : '');
   clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, 3800);
@@ -509,8 +483,7 @@ $('btnSave').onclick = function () {
 $('btnClean').onclick = function () { run('cleanEmptyRows', [], function (n) { toast(n + ' baris kosong dihapus'); load(); }, $('btnClean')); };
 
 $('tgl').value = today();
-$('btnLogout').classList.toggle('hide', !TOKEN);
-load();   // jika server mewajibkan login, formulir masuk akan muncul otomatis
+load();
 </script>
 </body>
 </html>
