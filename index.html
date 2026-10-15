@@ -71,7 +71,7 @@ dialog h3{margin:0 0 4px;font-size:16px}
 </style>
 </head>
 <body>
-<header><h1>Manajemen Nomor Surat</h1><span><small id="meta">Memuat…</small> <button class="sm" id="btnLogout" style="margin-left:8px">Keluar</button></span></header>
+<header><h1>Manajemen Nomor Surat</h1><span><small id="meta">Memuat…</small> <button class="sm hide" id="btnLogout" style="margin-left:8px">Keluar</button></span></header>
 <main>
 <section class="stats" id="stats"></section>
 <div class="grid">
@@ -195,7 +195,7 @@ dialog h3{margin:0 0 4px;font-size:16px}
 </dialog>
 <div id="login" class="hide">
   <form id="loginForm">
-    <h2>Masuk</h2><span class="hint">Manajemen Nomor Surat</span>
+    <h2>Masuk</h2><span class="hint">Server meminta kata sandi. Jika Anda tidak mengaktifkannya, deploy ulang Code.gs terbaru (Manage deployments → Edit → New version).</span>
     <label for="pw">Kata sandi</label><input id="pw" type="password" autocomplete="current-password" required>
     <div id="loginErr" role="alert"></div>
     <button class="pri block" id="btnLogin" type="submit" style="margin-top:6px">Masuk</button>
@@ -233,11 +233,11 @@ $('loginForm').onsubmit = function (e) {
   e.preventDefault(); $('btnLogin').disabled = true; $('loginErr').textContent = '';
   api('login', [$('pw').value]).then(function (d) {
     TOKEN = d.token; try { sessionStorage.setItem('tok', TOKEN); } catch (x) {}
-    $('pw').value = ''; $('login').classList.add('hide'); $('btnLogin').disabled = false; load();
+    $('pw').value = ''; $('login').classList.add('hide'); $('btnLogin').disabled = false; $('btnLogout').classList.remove('hide'); load();
   }).catch(function (err) { $('btnLogin').disabled = false; $('loginErr').textContent = err.message; });
 };
 $('btnLogout').onclick = function () {
-  api('logout').catch(function () {}).then(function () { TOKEN = ''; try { sessionStorage.removeItem('tok'); } catch (x) {} showLogin(); });
+  api('logout').catch(function () {}).then(function () { TOKEN = ''; try { sessionStorage.removeItem('tok'); } catch (x) {} $('btnLogout').classList.add('hide'); showLogin(); });
 };
 function toast(m, err) {
   var t = $('toast'); t.textContent = m; t.className = 'on' + (err ? ' err' : '');
@@ -509,7 +509,8 @@ $('btnSave').onclick = function () {
 $('btnClean').onclick = function () { run('cleanEmptyRows', [], function (n) { toast(n + ' baris kosong dihapus'); load(); }, $('btnClean')); };
 
 $('tgl').value = today();
-if (TOKEN) load(); else showLogin();
+$('btnLogout').classList.toggle('hide', !TOKEN);
+load();   // jika server mewajibkan login, formulir masuk akan muncul otomatis
 </script>
 </body>
 </html>
